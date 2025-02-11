@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"log"
+	"cristianUrbina/open-typing-batch-job/fileutils"
 )
 
 
@@ -12,13 +10,9 @@ func main() {
   fmt.Print("Hello world!\n")
   searchResp := searchGitHubRepos("go")
   fmt.Printf("Parse Search Response: %+v\n", searchResp)
-}
-
-func jsonFormatter(s []byte) string {
-  var prettyJSON bytes.Buffer
-  err := json.Indent(&prettyJSON, s, "", " ")
+  resp, err := getRepoTarball(searchResp.Items[0].FullName)
   if err != nil {
-    log.Fatalf("Error formatting JSON: %v", err)
+    return
   }
-  return prettyJSON.String()
+  fileutils.ExtractTarball(resp)
 }
