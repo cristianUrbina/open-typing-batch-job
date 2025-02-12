@@ -47,6 +47,9 @@ func getRepoTarball(repo string) (io.Reader, error) {
 	baseUrl := "https://api.github.com/repos/%s/tarball"
 	finalUrl := fmt.Sprintf(baseUrl, repo)
 	resp, err := http.Get(finalUrl)
+	log.Printf("content length: %v", resp.ContentLength)
+	log.Println("Rate Limit Remaining:", resp.Header.Get("X-RateLimit-Remaining"))
+	log.Println("Rate Limit Reset:", resp.Header.Get("X-RateLimit-Reset"))
 	if err != nil {
 		log.Fatalf("Error getting repo tarball: %v", err)
 		return nil, err

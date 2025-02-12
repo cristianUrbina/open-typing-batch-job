@@ -1,18 +1,25 @@
 package main
 
 import (
-	"fmt"
+	"log"
+
 	"cristianUrbina/open-typing-batch-job/fileutils"
 )
 
-
 func main() {
-  fmt.Print("Hello world!\n")
-  searchResp := searchGitHubRepos("go")
-  fmt.Printf("Parse Search Response: %+v\n", searchResp)
-  resp, err := getRepoTarball(searchResp.Items[0].FullName)
-  if err != nil {
-    return
-  }
-  fileutils.ExtractTarball(resp)
+	log.Printf("Searching for github repos")
+	languages := []string{"c", "python", "go", "js", "rust", "java"}
+	for _, l := range languages {
+		searchResp := searchGitHubRepos(l)
+		for _, v := range searchResp.Items {
+			log.Printf("Getting tarbal for repo: %+v\n", v.FullName)
+			resp, err := getRepoTarball(v.FullName)
+			if err != nil {
+				return
+			}
+			codeDir := "./batch_job_pulled_repos"
+			log.Printf("Extracting tarbal for repo: %+v\n", v.FullName)
+			fileutils.ExtractTarball(resp, codeDir)
+		}
+	}
 }
