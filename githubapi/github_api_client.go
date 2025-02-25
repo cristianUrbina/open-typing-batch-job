@@ -1,4 +1,4 @@
-package main
+package githubapi
 
 import (
 	"encoding/json"
@@ -7,7 +7,20 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 )
+
+type APIClient struct {
+	baseURL string
+	client *http.Client
+}
+
+func NewAPIClient() *APIClient {
+	return &APIClient{
+		baseURL: "https://api.github.com",
+		client: &http.Client{},
+	}
+}
 
 type GitHubSearchReposResp struct {
 	TotalCount        int  `json:"total_count"`
@@ -17,8 +30,9 @@ type GitHubSearchReposResp struct {
 	} `json:"items"`
 }
 
-func searchGitHubRepos(lang string) GitHubSearchReposResp {
-	baseURL, err := url.Parse("https://api.github.com/search/repositories")
+func SearchGitHubRepos(api *APIClient, lang string) (*GitHubSearchReposResp, error) {
+	apiToken := os.Getenv("API_TOKEN")
+	baseURL, err := url.Parse(api.baseURL + "/search/repositories")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -28,9 +42,22 @@ func searchGitHubRepos(lang string) GitHubSearchReposResp {
 	values.Add("sort", "forks")
 	values.Add("order", "desc")
 	baseURL.RawQuery = values.Encode()
-	resp, err := http.Get(baseURL.String())
+
+	// resp, err := http.Get(baseURL.String())
+	// if err != nil {
+	// 	log.Fatalf("Error making GET request: %v", err)
+	// }
+
+	req, err := http.NewRequest("GET", baseURL.String(), nil)
 	if err != nil {
-		log.Fatalf("Error making GET request: %v", err)
+		return nil, err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+apiToken)
+
+	resp, err := api.client.Do(req)
+	if err != nil {
+		return nil, err
 	}
 
 	defer resp.Body.Close()
@@ -39,11 +66,11 @@ func searchGitHubRepos(lang string) GitHubSearchReposResp {
 	if err != nil {
 		log.Fatal(err)
 	}
-	result, err := bodyToClass[GitHubSearchReposResp](body)
-	return result
+	result, err := bodyToClass[*GitHubSearchReposResp](body)
+	return result, nil
 }
 
-func getRepoTarball(repo string) (io.Reader, error) {
+func GetRepoTarball(repo string) (io.Reader, error) {
 	baseUrl := "https://api.github.com/repos/%s/tarball"
 	finalUrl := fmt.Sprintf(baseUrl, repo)
 	resp, err := http.Get(finalUrl)
