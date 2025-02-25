@@ -12,13 +12,13 @@ import (
 
 type APIClient struct {
 	baseURL string
-	client *http.Client
+	client  *http.Client
 }
 
 func NewAPIClient() *APIClient {
 	return &APIClient{
 		baseURL: "https://api.github.com",
-		client: &http.Client{},
+		client:  &http.Client{},
 	}
 }
 
@@ -71,16 +71,26 @@ func SearchGitHubRepos(api *APIClient, lang string) (*GitHubSearchReposResp, err
 }
 
 func GetRepoTarball(repo string) (io.Reader, error) {
-	baseUrl := "https://api.github.com/repos/%s/tarball"
-	finalUrl := fmt.Sprintf(baseUrl, repo)
-	resp, err := http.Get(finalUrl)
-	log.Printf("content length: %v", resp.ContentLength)
-	log.Println("Rate Limit Remaining:", resp.Header.Get("X-RateLimit-Remaining"))
-	log.Println("Rate Limit Reset:", resp.Header.Get("X-RateLimit-Reset"))
+	baseURL := "https://api.github.com/repos/%s/tarball"
+	finalURL := fmt.Sprintf(baseURL, repo)
+
+	req, err := http.NewRequest("GET", finalURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	apiToken := os.Getenv("API_TOKEN")
+	req.Header.Set("Authorization", "Bearer "+apiToken)
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Fatalf("Error getting repo tarball: %v", err)
 		return nil, err
 	}
+
+	log.Printf("content length: %v", resp.ContentLength)
+	log.Println("Rate Limit Remaining:", resp.Header.Get("X-RateLimit-Remaining"))
+	log.Println("Rate Limit Reset:", resp.Header.Get("X-RateLimit-Reset"))
 	return resp.Body, nil
 }
 
