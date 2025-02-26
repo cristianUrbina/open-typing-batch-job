@@ -1,4 +1,4 @@
-package githubapi
+package githubapiclient
 
 import (
 	"io"

@@ -1,38 +1,12 @@
 package fileutils
 
 import (
-	"archive/tar"
 	"bytes"
-	"compress/gzip"
+	"cristianUrbina/open-typing-batch-job/testutils"
 	"os"
 	"path/filepath"
 	"testing"
 )
-
-func createTarGz(contents map[string]string) (*bytes.Buffer, error) {
-	buf := new(bytes.Buffer)
-	gzWriter := gzip.NewWriter(buf)
-	tarWriter := tar.NewWriter(gzWriter)
-
-	for name, content := range contents {
-		header := &tar.Header{
-			Name: name,
-			Size: int64(len(content)),
-			Mode: 0o644,
-		}
-		if err := tarWriter.WriteHeader(header); err != nil {
-			return nil, err
-		}
-		if _, err := tarWriter.Write([]byte(content)); err != nil {
-			return nil, err
-		}
-	}
-
-	tarWriter.Close()
-	gzWriter.Close()
-
-	return buf, nil
-}
 
 func TestExtractTar(t *testing.T) {
 	// arrange
@@ -46,7 +20,7 @@ func TestExtractTar(t *testing.T) {
 		"file1.txt": "Hello, world!",
 		"file2.txt": "Go is awesome!",
 	}
-	tarGzData, err := createTarGz(contents)
+	tarGzData, err := testutils.CreateTarGz(contents)
 	if err != nil {
 		t.Fatalf("Failed to create tar.gz: %v", err)
 	}

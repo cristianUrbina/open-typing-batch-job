@@ -1,4 +1,4 @@
-package githubapi
+package githubapiclient
 
 import (
 	"encoding/json"
@@ -70,7 +70,7 @@ func SearchGitHubRepos(api *APIClient, lang string) (*GitHubSearchReposResp, err
 	return result, nil
 }
 
-func GetRepoTarball(repo string) (io.Reader, error) {
+func GetRepoTarball(repo string) (io.ReadSeeker, error) {
 	baseURL := "https://api.github.com/repos/%s/tarball"
 	finalURL := fmt.Sprintf(baseURL, repo)
 
@@ -91,7 +91,22 @@ func GetRepoTarball(repo string) (io.Reader, error) {
 	log.Printf("content length: %v", resp.ContentLength)
 	log.Println("Rate Limit Remaining:", resp.Header.Get("X-RateLimit-Remaining"))
 	log.Println("Rate Limit Reset:", resp.Header.Get("X-RateLimit-Reset"))
-	return resp.Body, nil
+
+	tmpFile, err := os.CreateTemp("", "tarball-*.tar")
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := io.Copy(tmpFile, resp.Body); err != nil {
+		tmpFile.Close()
+		return nil, err
+	}
+
+	if _, err := tmpFile.Seek(0, io.SeekStart); err != nil {
+		tmpFile.Close()
+		return nil, err
+	}
+	return tmpFile, nil
 }
 
 func bodyToClass[T any](body []byte) (T, error) {
