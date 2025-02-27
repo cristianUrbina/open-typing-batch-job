@@ -57,24 +57,19 @@ func ExtractTarball(r io.Reader, dir string) error {
 	return nil
 }
 
-func saveContentToFile(content io.Reader, filename string) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		log.Printf("Error saving content to file: %v", err)
-		return err
-	}
-	filename = filepath.Join(cwd, "github", filename+".tar.gz")
-	dirPath := filepath.Dir(filename)
-	err = os.MkdirAll(dirPath, os.ModePerm)
+func SaveContentToFile(content io.Reader, dir string) error {
+	dirPath := filepath.Dir(dir)
+	err := os.MkdirAll(dirPath, os.ModePerm)
 	if err != nil {
 		log.Printf("Error creating directories: %v", err)
 		return err
 	}
-	outFile, err := os.Create(filename)
+	outFile, err := os.Create(dir)
 	if err != nil {
 		log.Printf("Error creating outfile: %v", err)
 		return err
 	}
 	_, err = io.Copy(outFile, content)
+	outFile.Close()
 	return nil
 }

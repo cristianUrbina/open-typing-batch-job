@@ -1,42 +1,39 @@
-package services
+package app
 
 import (
 	"bytes"
-	"cristianUrbina/open-typing-batch-job/internal/core/entities"
+	"cristianUrbina/open-typing-batch-job/internal/domain"
 	"cristianUrbina/open-typing-batch-job/testutils"
 	"testing"
 )
 
-type DummyCodeRepo struct {
+type DummyCodeRepositoryRepo struct {
   CreateCalled bool
-  LastCode     *entitites.Code
+  LastCodeProject     *domain.Repository
   Err          error
 }
 
-func (d *DummyCodeRepo) Create(code *entitites.Code) error {
+func (d *DummyCodeRepositoryRepo) Create(code *domain.Repository) error {
   d.CreateCalled = true
-  d.LastCode = code
+  d.LastCodeProject = code
   return nil
 }
 
-func TestAddValidCode(t *testing.T) {
+func TestAddValidRepository(t *testing.T) {
   // arrange
   tarGZ, tarErr := testutils.CreateSampleTarGZ()
-  if tarErr != nil {
-    t.Fatal(tarErr)
-  }
-
-  code := &entitites.Code{
+  if tarErr != nil { t.Fatal(tarErr) }
+  code := &domain.Repository{
     Name: "some name",
     Content: bytes.NewReader(tarGZ.Bytes()),
   }
 
-  dummyRepo := &DummyCodeRepo{}
+  dummyRepo := &DummyCodeRepositoryRepo{}
   // codeProjectTarRepo :=
-  svc := NewCodeService(dummyRepo)
+  svc := NewCodeProjectService(dummyRepo)
 
   // act
-  err := svc.AddCode(code)
+  err := svc.AddRepo(code)
 
   //assert
   if err != nil {
@@ -46,24 +43,24 @@ func TestAddValidCode(t *testing.T) {
   if !dummyRepo.CreateCalled {
     t.Error("expected Create to be called for valid code, but it wasn't")
   }
-  if dummyRepo.LastCode != code {
-    t.Errorf("expected LastCode to be %v, got %v", code, dummyRepo.LastCode)
+  if dummyRepo.LastCodeProject != code {
+    t.Errorf("expected LastCode to be %v, got %v", code, dummyRepo.LastCodeProject)
   }
 }
 
-func TestAddInvalidCode(t *testing.T) {
+func TestAddInvalidRepository(t *testing.T) {
   // arrange
-  code := &entitites.Code{
+  code := &domain.Repository{
     Name: "some name",
     Content: bytes.NewReader([]byte{}),
   }
 
-  dummyRepo := &DummyCodeRepo{}
+  dummyRepo := &DummyCodeRepositoryRepo{}
   // codeProjectTarRepo :=
-  svc := NewCodeService(dummyRepo)
+  svc := NewCodeProjectService(dummyRepo)
 
   // act
-  err := svc.AddCode(code)
+  err := svc.AddRepo(code)
 
   if err == nil {
     t.Errorf("expected error %v, got nil", ErrInvalidCode)
