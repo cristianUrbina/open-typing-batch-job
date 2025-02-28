@@ -46,7 +46,7 @@ func TestSearchGitHubRepos(t *testing.T) {
 		baseURL: mockServer.URL,
 		client:  &http.Client{},
 	}
-	result, err := SearchGitHubRepos(client, lang)
+	result, err := client.SearchGitHubRepos(lang)
 	// assert
 	if err != nil {
 		t.Fatalf("Request failed: %v", err)
