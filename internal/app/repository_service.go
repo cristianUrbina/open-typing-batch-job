@@ -2,18 +2,17 @@ package app
 
 import (
 	"cristianUrbina/open-typing-batch-job/internal/domain"
-	"cristianUrbina/open-typing-batch-job/internal/domain/repositories"
 	"errors"
 )
 
-func NewCodeProjectService(repo repositories.CodeRepository) *RepositoryService{
+func NewCodeProjectService(repo domain.CodeRepository) *RepositoryService{
   return &RepositoryService{
     repo: repo,
   }
 }
 
 type RepositoryService struct {
-  repo repositories.CodeRepository
+  repo domain.CodeRepository
 }
 
 func (c *RepositoryService) AddRepo(code *domain.Repository) error {
