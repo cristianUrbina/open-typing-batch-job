@@ -26,7 +26,7 @@ func TestSearchRepoByLang(t *testing.T) {
 	if result == nil {
 		t.Errorf("result was expected to not be nil")
 	}
-	if !areRepoSlicesEqual(result, expected) {
+	if !testutils.AreSlicesEqual(result, expected) {
 		t.Errorf("result expected %v, but got %v", expected, result)
 	}
 }
@@ -41,20 +41,6 @@ func (d *DummyRepositoryRepo) SearchByLang(lang string) ([]Repository, error) {
 	return d.Repos, nil
 }
 
-func areRepoSlicesEqual(a, b []Repository) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i := range a {
-		if !a[i].Equal(&b[i]) {
-			return false
-		}
-	}
-
-	return true
-}
-
 func CreateRepositorySlice() ([]Repository, error) {
 	sampleCont, err := testutils.CreateSampleTarGZ()
 	if err != nil {
@@ -62,13 +48,15 @@ func CreateRepositorySlice() ([]Repository, error) {
 	}
 	result := []Repository{
 		{
-			Name:    "cristian/sample",
+			Name:    "sample",
+			Author:  "cristian",
 			Lang:    "c",
 			Source:  "github",
 			Content: bytes.NewReader(sampleCont.Bytes()),
 		},
 		{
-			Name:    "otherauthor/otherrepo",
+			Name:    "otherrepo",
+			Author:  "otherauthor",
 			Lang:    "c",
 			Source:  "github",
 			Content: bytes.NewReader(sampleCont.Bytes()),
