@@ -1,7 +1,7 @@
 package domain
 
 type Code struct {
-	Repository Repository
+	Repository *Repository
 	RepoDir    string
 	Content    []byte
 }

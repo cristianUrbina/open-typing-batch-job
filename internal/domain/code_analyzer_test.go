@@ -1,12 +1,13 @@
 package domain
 
 import (
-	"cristianUrbina/open-typing-batch-job/testutils"
 	"testing"
+
+	"cristianUrbina/open-typing-batch-job/testutils"
 )
 
-func createMeaningfulCodeSnippet () string {
-	result := `
+func createMeaningfulCode() *Code {
+	contentStr := `
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -57,13 +58,20 @@ int main() {
     return 0;
 }
 `
-  return result
+	content := []byte(contentStr)
+	result := &Code{
+		Repository: &Repository{
+			Author: "someauthor",
+			Name:   "someauthor/somename",
+			Lang:   "c",
+		},
+		RepoDir: "",
+		Content: content,
+	}
+	return result
 }
 
-func TestCodeAnalyzer(t *testing.T) {
-  // arrange
-  analyzer := NewCodeAnalyzer()
-  expected := []string {`
+var functionSample = `
 int levenshtein_distance(const char *s1, const char *s2) {
     int len1 = strlen(s1);
     int len2 = strlen(s2);
@@ -93,15 +101,37 @@ int levenshtein_distance(const char *s1, const char *s2) {
 
     return result;
 }
-  `}
-  // act
-  content := createMeaningfulCodeSnippet()
-  snippets, err := analyzer.Analyze(content)
-  // assert
-  if err != nil {
-    t.Errorf("error was expected to be nil but got %v", err)
-  }
-  if !testutils.AreStrSlicesEqual(expected, snippets) {
-    t.Errorf("snippets expected to be %v, but got %v", expected, snippets)
-  }
+  `
+
+type DummyExtractor struct{}
+
+func (d *DummyExtractor) ExtractSnippets(code *Code) ([]Snippet, error) {
+	return []Snippet{
+		{
+			Content: functionSample,
+		},
+	}, nil
+}
+
+func TestCodeAnalyzer(t *testing.T) {
+	// arrange
+	extractor := &DummyExtractor{}
+	analyzer := NewCodeAnalyzer(extractor)
+	expected := []CodeSnippet{
+		{
+			Content:    functionSample,
+			Language:   "c",
+			Repository: "someauthor/somename",
+		},
+	}
+	// act
+	content := createMeaningfulCode()
+	snippets, err := analyzer.Analyze(content)
+	// assert
+	if err != nil {
+		t.Errorf("error was expected to be nil but got %v", err)
+	}
+	if !testutils.AreSlicesEqual(expected, snippets) {
+		t.Errorf("snippets expected to be %v, but got %v", expected, snippets)
+	}
 }

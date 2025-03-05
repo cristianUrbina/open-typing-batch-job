@@ -1,5 +1,5 @@
 package domain
 
 type CodeRepository interface {
-  Create(CodeProject *Repository) error
+  Create(CodeProject *RepositoryWithContent) error
 }

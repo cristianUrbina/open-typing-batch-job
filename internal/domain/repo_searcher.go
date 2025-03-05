@@ -18,3 +18,4 @@ func (uc *RepoSearcher) SearchByLang(lang string) ([]Repository, error){
   }
   return repos, nil
 }
+

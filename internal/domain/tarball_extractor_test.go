@@ -23,7 +23,7 @@ func TestCodeExtractorExtract(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create tar.gz: %v", err)
 	}
-	repo := &Repository{
+	repo := &RepositoryWithContent{
 		Name:    "repo",
 		Author:  "anauthor",
 		Lang:    "go",

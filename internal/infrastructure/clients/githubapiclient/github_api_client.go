@@ -71,6 +71,7 @@ func (a *APIClient) SearchGitHubRepos(lang string) (*GitHubSearchReposResp, erro
 }
 
 func (a *APIClient) GetRepoTarball(repo string) (io.ReadSeeker, error) {
+	log.Printf("repo getting tarball for repo %v", repo)
 	baseURL := "https://api.github.com/repos/%s/tarball"
 	finalURL := fmt.Sprintf(baseURL, repo)
 
@@ -87,10 +88,13 @@ func (a *APIClient) GetRepoTarball(repo string) (io.ReadSeeker, error) {
 		log.Fatalf("Error getting repo tarball: %v", err)
 		return nil, err
 	}
-
-	log.Printf("content length: %v", resp.ContentLength)
-	log.Println("Rate Limit Remaining:", resp.Header.Get("X-RateLimit-Remaining"))
-	log.Println("Rate Limit Reset:", resp.Header.Get("X-RateLimit-Reset"))
+	if resp.StatusCode != 200 {
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("Unexpected response: %d\n%s", resp.StatusCode, string(body))
+		log.Printf("content length: %v", resp.ContentLength)
+		log.Println("Rate Limit Remaining:", resp.Header.Get("X-RateLimit-Remaining"))
+		log.Println("Rate Limit Reset:", resp.Header.Get("X-RateLimit-Reset"))
+	}
 
 	tmpFile, err := os.CreateTemp("", "tarball-*.tar")
 	if err != nil {

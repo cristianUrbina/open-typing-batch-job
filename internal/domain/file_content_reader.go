@@ -15,7 +15,7 @@ func (f *CodeFileContentReader) Read(repo Repository, filePath string) (*Code, e
     return nil, err
   }
   result := &Code {
-    Repository: repo,
+    Repository: &repo,
     RepoDir: "",
     Content: content,
   }

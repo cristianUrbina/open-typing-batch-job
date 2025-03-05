@@ -15,7 +15,7 @@ type RepositoryService struct {
   repo domain.CodeRepository
 }
 
-func (c *RepositoryService) AddRepo(code *domain.Repository) error {
+func (c *RepositoryService) AddRepo(code *domain.RepositoryWithContent) error {
   if err := code.Validate(); err != nil {
     return ErrInvalidCode
   }

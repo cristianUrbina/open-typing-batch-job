@@ -15,7 +15,7 @@ type TarballExtractor struct {
 	dir string
 }
 
-func (c *TarballExtractor) Extract(r *Repository) ([]string, error) {
+func (c *TarballExtractor) Extract(r *RepositoryWithContent) ([]string, error) {
   files, err := fileutils.ExtractTarball(r.Content, c.dir)
   if err != nil {
 	  return nil, fmt.Errorf("error extracting temporary directory %v", err)

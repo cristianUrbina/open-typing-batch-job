@@ -1,6 +1,7 @@
 package githubrepo
 
 import (
+	"fmt"
 	"log"
 
 	"cristianUrbina/open-typing-batch-job/internal/domain"
@@ -9,7 +10,7 @@ import (
 
 func NewRepositoryGithubRepo(apiClient githubapiclient.APIClient) *RepositoryGitHHubRepo {
 	return &RepositoryGitHHubRepo{
-	  client: apiClient,
+		client: apiClient,
 	}
 }
 
@@ -24,17 +25,37 @@ func (r *RepositoryGitHHubRepo) SearchByLang(lang string) ([]domain.Repository, 
 	}
 	repos := []domain.Repository{}
 	for _, v := range searchResp.Items {
-			tarballFile, err := r.client.GetRepoTarball(v.FullName)
-			if err != nil {
-				return nil, err
-			}
-			repository := domain.Repository{
-				Name:    v.FullName,
-				Lang:    lang,
-				Source:  "github",
-				Content: tarballFile,
-			}
-	  repos = append(repos, repository)
+		repository := domain.Repository{
+			Name:   v.FullName,
+			Lang:   lang,
+			Source: "github",
+		}
+		repos = append(repos, repository)
 	}
 	return repos, nil
+}
+
+func (r *RepositoryGitHHubRepo) GetRepoContent(repo domain.Repository) (*domain.RepositoryWithContent, error) {
+	tarballFile, err := r.client.GetRepoTarball(repo.GetFullName())
+	if err != nil {
+		return nil, fmt.Errorf("error getting repo tarball content: %w", err)
+	}
+	// var buf bytes.Buffer
+	// n, err := io.CopyN(&buf, tarballFile, 512) // Read first 512 bytes
+	// if err != nil && err != io.EOF {
+	// 	log.Fatal("Error reading tarball:", err)
+	// 	return nil, nil
+	// }
+	// if n == 0 {
+	// 	log.Fatal("Tarball is empty")
+	// 	return nil, nil
+	// }
+	// log.Printf("tarball length %v", n)
+	return &domain.RepositoryWithContent{
+		Name:    repo.Name,
+		Author:  repo.Author,
+		Lang:    repo.Lang,
+		Source:  repo.Source,
+		Content: tarballFile,
+	}, nil
 }
