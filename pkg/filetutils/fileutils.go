@@ -76,3 +76,11 @@ func SaveContentToFile(content io.Reader, dir string) error {
 	outFile.Close()
 	return nil
 }
+
+func GetFileContent(filePath string) ([]byte, error){
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+	return content, nil
+}

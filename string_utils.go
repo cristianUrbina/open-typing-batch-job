@@ -6,7 +6,7 @@ import (
 	"log"
 )
 
-func jsonFormatter(s []byte) string {
+func JsonFormatter(s []byte) string {
 	var prettyJSON bytes.Buffer
 	err := json.Indent(&prettyJSON, s, "", " ")
 	if err != nil {

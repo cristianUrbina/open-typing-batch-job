@@ -5,17 +5,17 @@ import (
 	"fmt"
 )
 
-func NewCodeExtractor(dir string) *CodeExtractor {
-  return &CodeExtractor{
+func NewCodeExtractor(dir string) *TarballExtractor {
+  return &TarballExtractor{
   	dir: dir,
   }
 }
 
-type CodeExtractor struct {
+type TarballExtractor struct {
 	dir string
 }
 
-func (c *CodeExtractor) Extract(r *Repository) ([]string, error) {
+func (c *TarballExtractor) Extract(r *Repository) ([]string, error) {
   files, err := fileutils.ExtractTarball(r.Content, c.dir)
   if err != nil {
 	  return nil, fmt.Errorf("error extracting temporary directory %v", err)
