@@ -26,7 +26,7 @@ func TestExtractTar(t *testing.T) {
 	}
 
 	// act
-	err = ExtractTarball(bytes.NewReader(tarGzData.Bytes()), tempDir)
+	_, err = ExtractTarball(bytes.NewReader(tarGzData.Bytes()), tempDir)
 	if err != nil {
 		t.Fatalf("ExtractTarball failed: %v", err)
 	}

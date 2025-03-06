@@ -30,9 +30,9 @@ type GitHubSearchReposResp struct {
 	} `json:"items"`
 }
 
-func SearchGitHubRepos(api *APIClient, lang string) (*GitHubSearchReposResp, error) {
+func (a *APIClient) SearchGitHubRepos(lang string) (*GitHubSearchReposResp, error) {
 	apiToken := os.Getenv("API_TOKEN")
-	baseURL, err := url.Parse(api.baseURL + "/search/repositories")
+	baseURL, err := url.Parse(a.baseURL + "/search/repositories")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -55,7 +55,7 @@ func SearchGitHubRepos(api *APIClient, lang string) (*GitHubSearchReposResp, err
 
 	req.Header.Set("Authorization", "Bearer "+apiToken)
 
-	resp, err := api.client.Do(req)
+	resp, err := a.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,8 @@ func SearchGitHubRepos(api *APIClient, lang string) (*GitHubSearchReposResp, err
 	return result, nil
 }
 
-func GetRepoTarball(repo string) (io.ReadSeeker, error) {
+func (a *APIClient) GetRepoTarball(repo string) (io.ReadSeeker, error) {
+	log.Printf("repo getting tarball for repo %v", repo)
 	baseURL := "https://api.github.com/repos/%s/tarball"
 	finalURL := fmt.Sprintf(baseURL, repo)
 
@@ -87,10 +88,13 @@ func GetRepoTarball(repo string) (io.ReadSeeker, error) {
 		log.Fatalf("Error getting repo tarball: %v", err)
 		return nil, err
 	}
-
-	log.Printf("content length: %v", resp.ContentLength)
-	log.Println("Rate Limit Remaining:", resp.Header.Get("X-RateLimit-Remaining"))
-	log.Println("Rate Limit Reset:", resp.Header.Get("X-RateLimit-Reset"))
+	if resp.StatusCode != 200 {
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("Unexpected response: %d\n%s", resp.StatusCode, string(body))
+		log.Printf("content length: %v", resp.ContentLength)
+		log.Println("Rate Limit Remaining:", resp.Header.Get("X-RateLimit-Remaining"))
+		log.Println("Rate Limit Reset:", resp.Header.Get("X-RateLimit-Reset"))
+	}
 
 	tmpFile, err := os.CreateTemp("", "tarball-*.tar")
 	if err != nil {
