@@ -27,10 +27,17 @@ func TestSearchGitHubRepos(t *testing.T) {
 	}
 
 	lang := "c"
+	token := "mysecrettoken"
+	err = os.Setenv("API_TOKEN", token)
+	if err != nil {
+		t.Fatalf("Failed to set environemnt variable: %v", err)
+	}
+
+	defer os.Unsetenv("API_TOKEN")
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
-		apiToken := os.Getenv("API_TOKEN")
-		expectedHeader := "Bearer "+apiToken
+		apiToken := token
+		expectedHeader := "Bearer " + apiToken
 
 		if authHeader != expectedHeader {
 			t.Errorf("Expected header %q, but got %q", expectedHeader, authHeader)
