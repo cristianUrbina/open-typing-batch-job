@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"runtime"
 	"sync"
 
 	"cristianUrbina/open-typing-batch-job/internal/app"
@@ -54,8 +55,9 @@ func main() {
 		close(repoChan)
 	}()
 
+	numWorkers := runtime.NumCPU()
 	var resultsWg sync.WaitGroup
-	for range 5 {
+	for range numWorkers {
 		resultsWg.Add(1)
 		go processRepoResults(repoChan, &resultsWg, snippetSvc)
 	}

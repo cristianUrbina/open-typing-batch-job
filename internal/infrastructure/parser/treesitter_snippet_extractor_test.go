@@ -1,6 +1,7 @@
 package infrastructure
 
 import (
+	"strings"
 	"testing"
 
 	"cristianUrbina/open-typing-batch-job/internal/domain"
@@ -55,7 +56,7 @@ func TestTreeSitterParserParsePython(t *testing.T) {
 
 func MakeJavaLang() *domain.Language {
 	return &domain.Language{
-		Name: "Java",
+		Name:  "Java",
 		Alias: "java",
 	}
 }
@@ -124,8 +125,8 @@ const isEven = (num) => {
 		Repository: &domain.Repository{
 			Author: "someauthor",
 			Name:   "somename",
-			Lang:   &domain.Language{
-				Name: "JavaScript",
+			Lang: &domain.Language{
+				Name:  "JavaScript",
 				Alias: "javascript",
 			},
 		},
@@ -156,3 +157,194 @@ const isEven = (num) => {
 		t.Errorf("snippets expected to be %v, but got %v", expected, snippets)
 	}
 }
+
+func TestTreeSitterParserParseC(t *testing.T) {
+	// arrange
+	codeStr := `
+	int add(int a, int b) {
+    return a + b;
+}
+
+void greet(const char *name) {
+    printf("Hello, %s!\n", name);
+}
+
+bool isEven(int num) {
+    return num % 2 == 0;
+}`
+
+	code := &domain.Code{
+		Repository: &domain.Repository{
+			Author: "someauthor",
+			Name:   "somename",
+			Lang: &domain.Language{
+				Name:  "C",
+				Alias: "c",
+			},
+		},
+		Content: []byte(codeStr),
+	}
+
+	expected := []domain.Snippet{
+		{
+			Content: `int add(int a, int b) {
+    return a + b;
+}`,
+		},
+		{
+			Content: `void greet(const char *name) {
+    printf("Hello, %s!\n", name);
+}`,
+		},
+		{
+			Content: `bool isEven(int num) {
+    return num % 2 == 0;
+}`,
+		},
+	}
+
+	parser := NewTreeSitterSnippetExtractor()
+	// act
+	snippets, err := parser.ExtractSnippets(code)
+	// assert
+	if err != nil {
+		t.Errorf("error was expected to be nil, but got %v", err)
+	}
+	if !testutils.AreSlicesEqual(expected, snippets) {
+		t.Errorf("snippets expected to be %v, but got %v", expected, snippets)
+	}
+}
+
+func TestTreeSitterParserParseGo(t *testing.T) {
+	// arrange
+	codeStr := `
+
+package main
+
+import "fmt"
+
+type Person struct {
+	Name string
+	Age  int
+}
+
+func (p *Person) Greet() string {
+	return "Hello, " + p.Name + "!"
+}
+
+func add(a int, b int) int {
+	return a + b
+}`
+
+	code := &domain.Code{
+		Repository: &domain.Repository{
+			Author: "someauthor",
+			Name:   "somename",
+			Lang: &domain.Language{
+				Name:  "Go",
+				Alias: "go",
+			},
+		},
+		Content: []byte(codeStr),
+	}
+
+	expected := []domain.Snippet{
+		{
+			Content: `func (p *Person) Greet() string {
+	return "Hello, " + p.Name + "!"
+}`,
+		},
+		{
+			Content: `func add(a int, b int) int {
+	return a + b
+}`,
+		},
+	}
+
+	parser := NewTreeSitterSnippetExtractor()
+	// act
+	snippets, err := parser.ExtractSnippets(code)
+	// assert
+	if err != nil {
+		t.Errorf("error was expected to be nil, but got %v", err)
+	}
+	if !testutils.AreSlicesEqual(expected, snippets) {
+		t.Errorf("snippets expected to be %v, but got %v", expected, snippets)
+	}
+}
+
+func TestTreeSitterParserParseRust(t *testing.T) {
+	// arrange
+	codeStr := `
+struct Person {
+    name: String,
+    age: u32,
+}
+
+fn add(a: i32, b: i32) -> i32 {
+    a + b
+}
+`
+
+	code := &domain.Code{
+		Repository: &domain.Repository{
+			Author: "someauthor",
+			Name:   "somename",
+			Lang: &domain.Language{
+				Name:  "Rust",
+				Alias: "rust",
+			},
+		},
+		Content: []byte(codeStr),
+	}
+
+	expected := []domain.Snippet{
+		{
+			Content: `struct Person {
+    name: String,
+    age: u32,
+}`,
+		},
+// 		{
+// 			Content: `fn greet(&self) -> String {
+//         format!("Hello, {}!", self.name)
+// }`,
+// 		},
+		{
+			Content: `fn add(a: i32, b: i32) -> i32 {
+    a + b
+}`,
+		},
+	}
+
+	parser := NewTreeSitterSnippetExtractor()
+	// act
+	snippets, err := parser.ExtractSnippets(code)
+	// assert
+	if err != nil {
+		t.Errorf("error was expected to be nil, but got %v", err)
+	}
+
+	// Normalize whitespaces and line breaks before comparing
+	normalizeSnippets(&expected)
+	normalizeSnippets(&snippets)
+
+	if !testutils.AreSlicesEqual(expected, snippets) {
+		t.Errorf("snippets expected to be %v, but got %v", expected, snippets)
+	}
+}
+
+// Helper function to normalize the snippets
+func normalizeSnippets(snippets *[]domain.Snippet) {
+	for i := range *snippets {
+		(*snippets)[i].Content = normalizeSnippetContent((*snippets)[i].Content)
+	}
+}
+
+// Helper function to normalize the content (trim spaces and normalize line breaks)
+func normalizeSnippetContent(content string) string {
+	content = strings.TrimSpace(content)
+	content = strings.ReplaceAll(content, "\r\n", "\n") // Normalize Windows line breaks to Unix
+	return content
+}
+

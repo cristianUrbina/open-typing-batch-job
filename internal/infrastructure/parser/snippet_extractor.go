@@ -26,6 +26,12 @@ func NewLangSitterConfig(lang string) (SitterLangConfig, error) {
 		return &SitterJavaConfig{}, nil
 	case "javascript":
 		return &SitterJavascriptConfig{}, nil
+	case "c":
+		return &SitterCConfig{}, nil
+	case "go":
+		return &SitterGoConfig{}, nil
+	case "rust":
+		return &SitterRustConfig{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported language %v", lang)
 	}
