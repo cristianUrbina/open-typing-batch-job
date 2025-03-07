@@ -9,3 +9,7 @@ type LanguageService struct {
 func (s *LanguageService) GetAvailableLanguages() ([]domain.Language, error) {
 	return s.Repo.GetLanguages()
 }
+
+func (s *LanguageService) GetLanguageByName(lang string) (*domain.Language, error) {
+	return s.Repo.GetLanguageByAlias(lang)
+}

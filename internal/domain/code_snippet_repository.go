@@ -5,4 +5,5 @@ type CodeSnippetRepository interface {
 	GetByRepository(repoName string) ([]CodeSnippet, error)
 	GetByFileName(fileName string) ([]CodeSnippet, error)
 	Delete(snippetID string) error
+ 	GetByLanguage(language string) ([]CodeSnippet, error)
 }

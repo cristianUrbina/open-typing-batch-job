@@ -100,6 +100,33 @@ func (r *CodeSnippetRepository) GetByFileName(fileName string) ([]domain.CodeSni
 	return snippets, nil
 }
 
+func (r *CodeSnippetRepository) GetByLanguage(language string) ([]domain.CodeSnippet, error) {
+	result, err := r.svc.Scan(&dynamodb.ScanInput{
+		TableName:                aws.String(r.tableName),
+		FilterExpression:         aws.String("#lang = :language"),
+		ExpressionAttributeNames: map[string]*string{"#lang": aws.String("Language")}, // 👈 Avoid reserved keyword
+		ExpressionAttributeValues: map[string]*dynamodb.AttributeValue{
+			":language": {S: aws.String(language)},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var snippets []domain.CodeSnippet
+	for _, item := range result.Items {
+		snippets = append(snippets, domain.CodeSnippet{
+			Name:       *item["Name"].S,
+			Content:    *item["Content"].S,
+			Language:   *item["Language"].S,
+			Repository: *item["Repository"].S,
+			RepoDir:    *item["RepoDir"].S,
+		})
+	}
+
+	return snippets, nil
+}
+
 func (r *CodeSnippetRepository) Delete(snippetID string) error {
 	_, err := r.svc.DeleteItem(&dynamodb.DeleteItemInput{
 		TableName: aws.String(r.tableName),

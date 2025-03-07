@@ -1,6 +1,11 @@
 package app
 
-import "cristianUrbina/open-typing-batch-job/internal/domain"
+import (
+	"errors"
+	"math/rand"
+
+	"cristianUrbina/open-typing-batch-job/internal/domain"
+)
 
 type SnippetService struct {
 	repo domain.CodeSnippetRepository
@@ -14,7 +19,7 @@ func (s *SnippetService) AddSnippet(repoName, fileName, language, snippetContent
 	snippet := domain.CodeSnippet{
 		Name:       fileName,
 		Repository: repoName,
-		RepoDir:    "repo_dir_example", // Or whatever the directory info is
+		RepoDir:    "repo_dir_example",
 		Content:    snippetContent,
 		Language:   language,
 	}
@@ -31,4 +36,18 @@ func (s *SnippetService) GetSnippetsByFileName(fileName string) ([]domain.CodeSn
 
 func (s *SnippetService) DeleteSnippet(snippetID string) error {
 	return s.repo.Delete(snippetID)
+}
+
+func (s *SnippetService) GetRandomSnippetByLanguage(lang string) (*domain.CodeSnippet, error) {
+	snippets, err := s.repo.GetByLanguage(lang)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(snippets) == 0 {
+		return nil, errors.New("no snippets available for this language")
+	}
+
+	index := rand.Intn(len(snippets))
+	return &snippets[index], nil
 }

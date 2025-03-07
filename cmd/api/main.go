@@ -5,11 +5,13 @@ import (
 	"net/http"
 
 	"cristianUrbina/open-typing-batch-job/internal/app"
+	"cristianUrbina/open-typing-batch-job/internal/infrastructure/database/dynamodb"
 	"cristianUrbina/open-typing-batch-job/internal/infrastructure/database/postgredatabase"
 	"cristianUrbina/open-typing-batch-job/internal/infrastructure/httphandlers"
 
-	"github.com/joho/godotenv"
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"github.com/rs/cors"
 )
 
 type LanguageDto struct {
@@ -20,24 +22,42 @@ type LanguageDto struct {
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file, %v", err)
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	log.Fatalf("Error loading .env file, %v", err)
+	// }
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"}, // Allow all origins
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"Content-Type", "Authorization"},
+	})
+
 	db, err := postgredatabase.NewDatabase()
 	if err != nil {
 		log.Fatalf("error creating db connection: %v", err)
 	}
 	defer db.Close()
 
-	repo := &postgredatabase.PostgresLanguageRepository{DB: db}
-	service := &app.LanguageService{Repo: repo}
-	handler := &httphandlers.LanguageHandler{Service: service}
+	// Initialize services and repositories
+	languageRepo := &postgredatabase.PostgresLanguageRepository{DB: db}
+	langSvc := &app.LanguageService{Repo: languageRepo}
+	langHandler := &httphandlers.LanguageHandler{Service: langSvc}
 
-	http.HandleFunc("/languages", handler.GetLanguages)
+	dynamoClient := dynamodb.NewDynamoClient()
+	snippetRepo := dynamodb.NewCodeSnippetRepository(dynamoClient)
+	snippetSvc := app.NewSnippetService(snippetRepo)
+	snippetHandler := &httphandlers.SnippetHandler{Service: snippetSvc}
+
+	// Use gorilla/mux for routing
+	r := mux.NewRouter()
+	r.HandleFunc("/languages", langHandler.GetLanguages).Methods("GET")
+	r.HandleFunc("/languages/{lang}", langHandler.GetLanguageByName).Methods("GET")
+	r.HandleFunc("/snippet/{lang}", snippetHandler.GetSnippetByLanguage).Methods("GET")
 
 	log.Println("Server is running on port 8080...")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	handlerWithCors := corsHandler.Handler(r)
+
+	if err := http.ListenAndServe(":8080", handlerWithCors); err != nil {
 		log.Fatal(err)
 	}
 }
