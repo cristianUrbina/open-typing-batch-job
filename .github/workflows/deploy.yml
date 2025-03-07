@@ -28,16 +28,16 @@ jobs:
         run: |
           docker build -t ${{ secrets.ECR_REGISTRY }}/open-typing-api:latest .
 
-      - name: Push Docker image to ECR
-        run: |
-          docker push ${{ secrets.ECR_REGISTRY }}/open-typing-api:latest
-
       - name: Log in to AWS using GitHub Secrets
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ secrets.ECR_REGISTRY }}/open-typing-api:latest
 
       - name: Update ECS Task Definition with new Docker image and environment variables
         run: |
