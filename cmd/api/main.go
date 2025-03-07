@@ -1,14 +1,12 @@
 package main
 
 import (
-	"cristianUrbina/open-typing-batch-job/internal/app"
-	"cristianUrbina/open-typing-batch-job/internal/domain"
-	"cristianUrbina/open-typing-batch-job/internal/infrastructure/database/postgredatabase"
-	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
-	"os"
+
+	"cristianUrbina/open-typing-batch-job/internal/app"
+	"cristianUrbina/open-typing-batch-job/internal/infrastructure/database/postgredatabase"
+	"cristianUrbina/open-typing-batch-job/internal/infrastructure/httphandlers"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -26,32 +24,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading .env file, %v", err)
 	}
-
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	// log.Printf("dbname %v", dbName)
-	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
-
-	// Construct the connection string
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		dbUser, dbPassword, dbHost, dbPort, dbName)
-	db, err := sql.Open("postgres", connStr)
+	db, err := postgredatabase.NewDatabase()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("error creating db connection: %v", err)
 	}
 	defer db.Close()
 
-	// Initialize repository, service, and handler
 	repo := &postgredatabase.PostgresLanguageRepository{DB: db}
-	service := &domain.LanguageService{Repo: repo}
-	handler := &app.LanguageHandler{Service: service}
+	service := &app.LanguageService{Repo: repo}
+	handler := &httphandlers.LanguageHandler{Service: service}
 
-	// Set up the HTTP route
 	http.HandleFunc("/languages", handler.GetLanguages)
 
-	// Start the server
 	log.Println("Server is running on port 8080...")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)

@@ -3,79 +3,151 @@ package main
 import (
 	"log"
 	"os"
+	"sync"
 
+	"cristianUrbina/open-typing-batch-job/internal/app"
 	"cristianUrbina/open-typing-batch-job/internal/domain"
 	"cristianUrbina/open-typing-batch-job/internal/infrastructure/clients/githubapiclient"
+	"cristianUrbina/open-typing-batch-job/internal/infrastructure/database/dynamodb"
 	"cristianUrbina/open-typing-batch-job/internal/infrastructure/database/githubrepo"
+	"cristianUrbina/open-typing-batch-job/internal/infrastructure/database/postgredatabase"
 
 	infrastructure "cristianUrbina/open-typing-batch-job/internal/infrastructure/parser"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
-	log.Printf("Searching for github repos")
-	// languages := []string{"c", "python", "go", "js", "rust", "java"}
-	languages := []string{"python", "js", "java"}
-	for _, l := range languages {
-		tmpDir, err := os.MkdirTemp("", "test-extract")
-		if err != nil {
-			log.Fatalf("failed to create temporary directory")
-		}
-		log.Printf("tmpDir %v", tmpDir)
-		client := githubapiclient.NewAPIClient()
-		githubRepo := githubrepo.NewRepositoryGithubRepo(*client)
-		repoSearcher := domain.NewRepoSearcher(githubRepo)
-		repoExtractor := domain.NewCodeExtractor(tmpDir)
-		fileFilter := domain.NewFileFilter([]string{"c", "h", "python"})
-		contentReader := domain.NewCodeFileContentReader()
-		extr := infrastructure.NewTreeSitterSnippetExtractor()
-		codeAnalyzer := domain.NewCodeAnalyzer(extr)
-		contendDownloader := domain.NewRepositoryContentDownloader(githubRepo)
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error loading .env file, %v", err)
+	}
 
-		repos, err := repoSearcher.SearchByLang(l)
+	log.Println("Searching for GitHub repos...")
+
+	db, err := postgredatabase.NewDatabase()
+	if err != nil {
+		log.Fatalf("Error creating DB connection: %v", err)
+	}
+	repo := &postgredatabase.PostgresLanguageRepository{DB: db}
+	langSvc := &app.LanguageService{Repo: repo}
+
+	langs, err := langSvc.GetAvailableLanguages()
+	if err != nil {
+		log.Fatalf("Error getting languages: %v", err)
+	}
+
+	dynamoClient := dynamodb.NewDynamoClient()
+	snippetRepo := dynamodb.NewCodeSnippetRepository(dynamoClient)
+	snippetSvc := app.NewSnippetService(snippetRepo)
+
+	var wg sync.WaitGroup
+	repoChan := make(chan domain.Repository, 50)
+
+	for _, lang := range langs {
+		wg.Add(1)
+		go processLanguage(lang, &wg, repoChan)
+	}
+
+	go func() {
+		wg.Wait()
+		close(repoChan)
+	}()
+
+	var resultsWg sync.WaitGroup
+	for range 5 {
+		resultsWg.Add(1)
+		go processRepoResults(repoChan, &resultsWg, snippetSvc)
+	}
+
+	resultsWg.Wait()
+
+	log.Println("Processing completed!")
+}
+
+func processLanguage(lang domain.Language, wg *sync.WaitGroup, repoChan chan<- domain.Repository) {
+	defer wg.Done()
+
+	tmpDir, err := os.MkdirTemp("", "test-extract")
+	if err != nil {
+		log.Printf("Failed to create temp dir: %v", err)
+		return
+	}
+
+	log.Printf("Processing language: %s in tempDir: %v", lang.Alias, tmpDir)
+
+	client := githubapiclient.NewAPIClient()
+	githubRepo := githubrepo.NewRepositoryGithubRepo(*client)
+	repoSvc := app.NewRepoService(githubRepo)
+
+	repos, err := repoSvc.SearchByLang(&lang)
+	if err != nil {
+		log.Printf("Failed searching repos for %s: %v", lang.Alias, err)
+		return
+	}
+
+	for _, repo := range repos {
+		repoChan <- repo
+	}
+}
+
+func processRepoResults(repoChan <-chan domain.Repository, resultsWg *sync.WaitGroup, snippetSvc *app.SnippetService) {
+	defer resultsWg.Done()
+
+	client := githubapiclient.NewAPIClient()
+	githubRepo := githubrepo.NewRepositoryGithubRepo(*client)
+	contentReader := domain.NewCodeFileContentReader()
+	extr := infrastructure.NewTreeSitterSnippetExtractor()
+	codeSvc := app.NewCodeService(extr)
+	repoSvc := app.NewRepoService(githubRepo)
+
+	for repo := range repoChan {
+		snippetsCnt := 0
+		fileFilter := domain.NewFileFilter(repo.Lang.Extensions)
+		log.Printf("Getting content: %s", repo.Name)
+
+		repoWithContent, err := repoSvc.GetRepoContent(repo)
 		if err != nil {
-			log.Fatalf("Failed searching repos %v", err)
+			log.Printf("Error getting repo content: %v", err)
+			continue
 		}
-		for _, r := range repos {
-			log.Printf("repo %v", r.Name)
-			log.Println("getting  tarball")
-			repoWithContent, err := contendDownloader.GetRepoContent(r)
+
+		log.Printf("Extracting: %s", repo.Name)
+		files, err := repoSvc.Extract(repoWithContent)
+		if err != nil {
+			log.Printf("Error extracting tarball: %v", err)
+			continue
+		}
+
+		log.Printf("Filtering files: %s", repo.Name)
+		filteredFiles, err := fileFilter.Filter(files)
+		if err != nil {
+			log.Printf("Error filtering files: %v", err)
+			continue
+		}
+
+		log.Printf("Analyzing files: %s", repo.Name)
+		for _, file := range filteredFiles {
+			code, err := contentReader.Read(repo, file)
 			if err != nil {
-				log.Printf("error getting repo content: %v", err)
+				log.Printf("Error reading file content: %v", err)
 				continue
 			}
-			// TODO: check why is causing extract to fail. Suspect it has to be with how the buffer is read when stored
-			// fsRepo := &filesystemdb.FSRepositoryRepo{}
-			// svc := app.NewCodeProjectService(fsRepo)
-			// err = svc.AddRepo(repoWithContent)
-			// if err != nil {
-			// 	log.Fatalf("error creating code, %v", err)
-			// }
-			log.Println("extracting  tarball")
-			files, err := repoExtractor.Extract(repoWithContent)
+
+			codeSnippets, err := codeSvc.Analyze(code)
 			if err != nil {
-				log.Printf("error extracting tarball %v", err)
+				log.Printf("Error analyzing file content: %v", err)
 				continue
 			}
-			filteredFiles, err := fileFilter.Filter(files)
-			if err != nil {
-				log.Printf("error filtering files, %v", err)
-				continue
-			}
-			for _, f := range filteredFiles {
-				code, err := contentReader.Read(r, f)
+
+			snippetsCnt = snippetsCnt + len(codeSnippets)
+			for _, snippet := range codeSnippets {
+				err := snippetSvc.AddSnippet(repo.Name, file, snippet.Language, snippet.Content)
 				if err != nil {
-					log.Printf("an unexpected error ocurred while getting file content, %v", err)
-					continue
-				}
-				codeSnippets, err := codeAnalyzer.Analyze(code)
-				if err != nil {
-					log.Printf("error analyzing file content, %v", err)
-					continue
-				}
-				for _, s := range codeSnippets {
-					log.Printf("code snippet: %v", s.Content)
+					log.Printf("Error persisting snippet to DynamoDB: %v", err)
 				}
 			}
 		}
+		log.Printf("no of snippets extracted from %v, %v", repo.Name, snippetsCnt)
 	}
 }

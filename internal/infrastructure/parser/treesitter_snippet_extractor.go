@@ -18,7 +18,7 @@ type TreeSitterSnippetExtractor struct{}
 func (t *TreeSitterSnippetExtractor) ExtractSnippets(code *domain.Code) ([]domain.Snippet, error) {
 	parser := sitter.NewParser()
 	defer parser.Close()
-	sitterConfig, err := NewLangSitterConfig(code.Repository.Lang)
+	sitterConfig, err := NewLangSitterConfig(code.Repository.Lang.Alias)
 	if err != nil {
 		return nil, fmt.Errorf("error creating sitteraux: %w", err)
 	}

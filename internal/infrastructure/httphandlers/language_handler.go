@@ -1,14 +1,15 @@
-package app
+package httphandlers
 
 import (
-	"cristianUrbina/open-typing-batch-job/internal/domain"
 	"encoding/json"
 	"log"
 	"net/http"
+
+	"cristianUrbina/open-typing-batch-job/internal/app"
 )
 
 type LanguageHandler struct {
-	Service *domain.LanguageService
+	Service *app.LanguageService
 }
 
 func (h *LanguageHandler) GetLanguages(w http.ResponseWriter, r *http.Request) {

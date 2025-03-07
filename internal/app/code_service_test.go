@@ -1,12 +1,13 @@
-package domain
+package app
 
 import (
 	"testing"
 
+	"cristianUrbina/open-typing-batch-job/internal/domain"
 	"cristianUrbina/open-typing-batch-job/testutils"
 )
 
-func createMeaningfulCode() *Code {
+func createMeaningfulCode() *domain.Code {
 	contentStr := `
 #include <stdio.h>
 #include <string.h>
@@ -59,11 +60,11 @@ int main() {
 }
 `
 	content := []byte(contentStr)
-	result := &Code{
-		Repository: &Repository{
+	result := &domain.Code{
+		Repository: &domain.Repository{
 			Author: "someauthor",
 			Name:   "someauthor/somename",
-			Lang:   "c",
+			Lang:   MakeLangC(),
 		},
 		RepoDir: "",
 		Content: content,
@@ -105,8 +106,8 @@ int levenshtein_distance(const char *s1, const char *s2) {
 
 type DummyExtractor struct{}
 
-func (d *DummyExtractor) ExtractSnippets(code *Code) ([]Snippet, error) {
-	return []Snippet{
+func (d *DummyExtractor) ExtractSnippets(code *domain.Code) ([]domain.Snippet, error) {
+	return []domain.Snippet{
 		{
 			Content: functionSample,
 		},
@@ -116,8 +117,8 @@ func (d *DummyExtractor) ExtractSnippets(code *Code) ([]Snippet, error) {
 func TestCodeAnalyzer(t *testing.T) {
 	// arrange
 	extractor := &DummyExtractor{}
-	analyzer := NewCodeAnalyzer(extractor)
-	expected := []CodeSnippet{
+	analyzer := NewCodeService(extractor)
+	expected := []domain.CodeSnippet{
 		{
 			Content:    functionSample,
 			Language:   "c",

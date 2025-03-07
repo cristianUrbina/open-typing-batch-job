@@ -1,11 +1,11 @@
 package domain
 
 type CodeSnippet struct {
-	Name       string
-	Content    string
-	Language   string
-	Repository string
-	RepoDir    string
+	Name       string `json:"name"`
+	Content    string `json:"content"`
+	Language   string `json:"language"`
+	Repository string `json:"repository"`
+	RepoDir    string `json:"repo_dir"`
 }
 
 func (c CodeSnippet) Equal(other CodeSnippet) bool {

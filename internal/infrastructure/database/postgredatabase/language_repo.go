@@ -5,67 +5,51 @@ import (
 	"fmt"
 
 	"cristianUrbina/open-typing-batch-job/internal/domain"
+
+	"github.com/lib/pq"
 )
 
 type PostgresLanguageRepository struct {
 	DB *sql.DB
 }
 
-// GetLanguages fetches all languages and their associated file extensions.
 func (r *PostgresLanguageRepository) GetLanguages() ([]domain.Language, error) {
-	// Query to join the language and language_file_ext tables
 	query := `
-		SELECT l.id, l.name, l.logo_url, e.extension
-		FROM code.language l
-		LEFT JOIN code.language_file_ext e ON l.id = e.language_id
-		ORDER BY l.id
-	`
+        SELECT
+            l.id,
+            l.name,
+            l.alias,
+            l.logo_url,
+            COALESCE(ARRAY_AGG(DISTINCT e.extension) FILTER (WHERE e.extension IS NOT NULL), '{}') AS extensions,
+            COALESCE(ARRAY_AGG(DISTINCT c.name) FILTER (WHERE c.name IS NOT NULL), '{}') AS capabilities
+        FROM code.language l
+        LEFT JOIN code.language_file_ext e ON l.id = e.language_id
+        LEFT JOIN code.language_capability lc ON l.id = lc.language_id
+        LEFT JOIN code.capability c ON lc.capability_id = c.id
+        GROUP BY l.id, l.name, l.logo_url
+        ORDER BY l.id;
+    `
+
 	rows, err := r.DB.Query(query)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query languages: %w", err)
 	}
 	defer rows.Close()
 
-	// Map to store languages and their extensions
-	languageMap := make(map[int]*domain.Language)
+	var languages []domain.Language
 
 	for rows.Next() {
-		var (
-			id        int
-			name      string
-			logoURL   string
-			extension sql.NullString // Use sql.NullString to handle NULL extensions
-		)
-		if err := rows.Scan(&id, &name, &logoURL, &extension); err != nil {
+		var lang domain.Language
+		var extensions pq.StringArray
+		var capabilities pq.StringArray
+
+		if err := rows.Scan(&lang.ID, &lang.Name, &lang.Alias, &lang.LogoURL, &extensions, &capabilities); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 
-		// Check if the language is already in the map
-		if lang, exists := languageMap[id]; exists {
-			// Append the extension if it exists
-			if extension.Valid {
-				lang.Extensions = append(lang.Extensions, extension.String)
-			}
-		} else {
-			// Create a new language entry
-			lang := &domain.Language{
-				ID:         id,
-				Name:       name,
-				LogoURL:    logoURL,
-				Extensions: []string{},
-			}
-			// Append the extension if it exists
-			if extension.Valid {
-				lang.Extensions = append(lang.Extensions, extension.String)
-			}
-			languageMap[id] = lang
-		}
-	}
-
-	// Convert the map to a slice
-	var languages []domain.Language
-	for _, lang := range languageMap {
-		languages = append(languages, *lang)
+		lang.Extensions = extensions
+		lang.Capabilities = capabilities
+		languages = append(languages, lang)
 	}
 
 	return languages, nil

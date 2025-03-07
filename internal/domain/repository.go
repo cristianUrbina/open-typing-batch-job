@@ -10,14 +10,14 @@ import (
 type Repository struct {
 	Name   string
 	Author string
-	Lang   string
+	Lang   *Language
 	Source string
 }
 
 type RepositoryWithContent struct {
 	Name    string
 	Author  string
-	Lang    string
+	Lang    *Language
 	Source  string
 	Content io.ReadSeeker
 }

@@ -18,8 +18,8 @@ type RepositoryGitHHubRepo struct {
 	client githubapiclient.APIClient
 }
 
-func (r *RepositoryGitHHubRepo) SearchByLang(lang string) ([]domain.Repository, error) {
-	searchResp, err := r.client.SearchGitHubRepos(lang)
+func (r *RepositoryGitHHubRepo) SearchByLang(lang *domain.Language) ([]domain.Repository, error) {
+	searchResp, err := r.client.SearchGitHubRepos(lang.Alias)
 	if err != nil {
 		log.Fatalf("Failed to search github repos: %v", err)
 	}
@@ -40,17 +40,6 @@ func (r *RepositoryGitHHubRepo) GetRepoContent(repo domain.Repository) (*domain.
 	if err != nil {
 		return nil, fmt.Errorf("error getting repo tarball content: %w", err)
 	}
-	// var buf bytes.Buffer
-	// n, err := io.CopyN(&buf, tarballFile, 512) // Read first 512 bytes
-	// if err != nil && err != io.EOF {
-	// 	log.Fatal("Error reading tarball:", err)
-	// 	return nil, nil
-	// }
-	// if n == 0 {
-	// 	log.Fatal("Tarball is empty")
-	// 	return nil, nil
-	// }
-	// log.Printf("tarball length %v", n)
 	return &domain.RepositoryWithContent{
 		Name:    repo.Name,
 		Author:  repo.Author,

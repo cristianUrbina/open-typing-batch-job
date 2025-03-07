@@ -9,13 +9,20 @@ import (
 	samplecodes "cristianUrbina/open-typing-batch-job/testutils/sample_codes"
 )
 
+func MakePythonLang() *domain.Language {
+	return &domain.Language{
+		Name:  "Python",
+		Alias: "python",
+	}
+}
+
 func TestTreeSitterParserParsePython(t *testing.T) {
 	// arrange
 	code := &domain.Code{
 		Repository: &domain.Repository{
 			Author: "someauthor",
 			Name:   "somename",
-			Lang:   "python",
+			Lang:   MakePythonLang(),
 		},
 		Content: []byte(samplecodes.PythonSampleCode),
 	}
@@ -46,13 +53,20 @@ func TestTreeSitterParserParsePython(t *testing.T) {
 	}
 }
 
+func MakeJavaLang() *domain.Language {
+	return &domain.Language{
+		Name: "Java",
+		Alias: "java",
+	}
+}
+
 func TestTreeSitterParserParseJava(t *testing.T) {
 	// arrange
 	code := &domain.Code{
 		Repository: &domain.Repository{
 			Author: "someauthor",
 			Name:   "somename",
-			Lang:   "java",
+			Lang:   MakeJavaLang(),
 		},
 		Content: []byte(samplecodes.JavaSampleCode),
 	}
@@ -106,12 +120,14 @@ const isEven = (num) => {
     return num % 2 === 0;
 };`
 
-
 	code := &domain.Code{
 		Repository: &domain.Repository{
 			Author: "someauthor",
 			Name:   "somename",
-			Lang:   "javascript",
+			Lang:   &domain.Language{
+				Name: "JavaScript",
+				Alias: "javascript",
+			},
 		},
 		Content: []byte(codeStr),
 	}
