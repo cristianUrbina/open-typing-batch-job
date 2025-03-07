@@ -63,7 +63,10 @@ jobs:
               {"name": "DB_PASSWORD", "value": "${{ secrets.DB_PASSWORD }}"},
               {"name": "DB_NAME", "value": "${{ secrets.DB_NAME }}"},
               {"name": "DB_HOST", "value": "${{ secrets.DB_HOST }}"},
-              {"name": "DB_PORT", "value": "${{ secrets.DB_PORT }}"}
+              {"name": "DB_PORT", "value": "${{ secrets.DB_PORT }}"},
+              {"name": "AWS_ACCESS_KEY_ID", "value": "${{ secrets.AWS_ACCESS_KEY_ID }}"},
+              {"name": "AWS_SECRET_ACCESS_KEY", "value": "${{ secrets.AWS_SECRET_ACCESS_KEY }}"},
+              {"name": "AWS_REGION", "value": "${{ secrets.AWS_REGION }}"}
           ] | { family: .taskDefinition.family, containerDefinitions: .containerDefinitions }'
 
           # Register new task definition
