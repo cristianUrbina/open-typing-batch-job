@@ -57,7 +57,7 @@ jobs:
               {"name": "AWS_REGION", "value": "${{ secrets.AWS_REGION }}"}
           ] | { family: .taskDefinition.family, containerDefinitions: .containerDefinitions }')
 
-          echo "$new_task_definition" | aws ecs register-task-definition --cli-input-json file://-
+          echo "$new_task_definition" | aws ecs register-task-definition --cli-input-json file:///dev/stdin
 
       - name: Update ECS Service to Use New Task Definition
         run: |
