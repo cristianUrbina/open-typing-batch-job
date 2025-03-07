@@ -21,29 +21,13 @@ jobs:
         with:
           go-version: "1.24.1"
 
-      - name: Cache Go modules
-        uses: actions/cache@v4
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.mod') }}
-          restore-keys: |
-            ${{ runner.os }}-go-mod-
-
-      - name: Install dependencies
-        run: go mod tidy
-
-      - name: Build the Go app
-        run: go build -o main .
-
       - name: Run tests (optional but recommended)
         run: go test ./...
 
-      # Build Docker image and tag it
       - name: Build Docker image
         run: |
           docker build -t ${{ secrets.ECR_REGISTRY }}/open-typing-api:latest .
 
-      # Push Docker image to ECR (or DockerHub if not using ECR)
       - name: Push Docker image to ECR
         run: |
           docker push ${{ secrets.ECR_REGISTRY }}/open-typing-api:latest
@@ -69,15 +53,12 @@ jobs:
               {"name": "AWS_REGION", "value": "${{ secrets.AWS_REGION }}"}
           ] | { family: .taskDefinition.family, containerDefinitions: .containerDefinitions }'
 
-          # Register new task definition
           echo "$new_task_definition" | aws ecs register-task-definition --cli-input-json file://-
 
       - name: Update ECS Service to Use New Task Definition
         run: |
-          # Get the latest task definition revision
           latest_revision=$(aws ecs describe-task-definition --task-definition your-task-definition-family --query "taskDefinition.revision" --output text)
 
-          # Update the ECS service with the new task definition revision
           aws ecs update-service \
             --cluster your-cluster-name \
             --service your-service-name \
