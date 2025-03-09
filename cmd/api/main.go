@@ -23,7 +23,7 @@ type LanguageDto struct {
 
 func main() {
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins: []string{"*"}, // Allow all origins
+		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders: []string{"Content-Type", "Authorization"},
 	})
@@ -34,7 +34,6 @@ func main() {
 	}
 	defer db.Close()
 
-	// Initialize services and repositories
 	languageRepo := &postgredatabase.PostgresLanguageRepository{DB: db}
 	langSvc := &app.LanguageService{Repo: languageRepo}
 	langHandler := &httphandlers.LanguageHandler{Service: langSvc}
@@ -44,11 +43,10 @@ func main() {
 	snippetSvc := app.NewSnippetService(snippetRepo)
 	snippetHandler := &httphandlers.SnippetHandler{Service: snippetSvc}
 
-	// Use gorilla/mux for routing
 	r := mux.NewRouter()
 	r.HandleFunc("/languages", langHandler.GetLanguages).Methods("GET")
 	r.HandleFunc("/languages/{lang}", langHandler.GetLanguageByName).Methods("GET")
-	r.HandleFunc("/snippet/{lang}", snippetHandler.GetSnippetByLanguage).Methods("GET")
+	r.HandleFunc("/snippets/{lang}", snippetHandler.GetSnippetByLanguage).Methods("GET")
 
 	log.Println("Server is running on port 8080...")
 	handlerWithCors := corsHandler.Handler(r)
