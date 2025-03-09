@@ -22,10 +22,6 @@ type LanguageDto struct {
 }
 
 func main() {
-	// err := godotenv.Load()
-	// if err != nil {
-	// 	log.Fatalf("Error loading .env file, %v", err)
-	// }
 	corsHandler := cors.New(cors.Options{
 		AllowedOrigins: []string{"*"}, // Allow all origins
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -57,7 +53,7 @@ func main() {
 	log.Println("Server is running on port 8080...")
 	handlerWithCors := corsHandler.Handler(r)
 
-	if err := http.ListenAndServe(":8080", handlerWithCors); err != nil {
+	if err := http.ListenAndServe("0.0.0.0:8080", handlerWithCors); err != nil {
 		log.Fatal(err)
 	}
 }

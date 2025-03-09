@@ -64,7 +64,7 @@ jobs:
           latest_revision=$(aws ecs describe-task-definition --task-definition open-typing-api-task-definition --query "taskDefinition.revision" --output text)
 
           aws ecs update-service \
-            --cluster your-cluster-name \
-            --service your-service-name \
+            --cluster my-cluster \
+            --service open-typing-api-service \
             --task-definition open-typing-api-task-definition:$latest_revision \
             --force-new-deployment
