@@ -21,8 +21,8 @@ jobs:
         with:
           go-version: "1.24.1"
 
-      # - name: Run tests (optional but recommended)
-      #   run: go test ./...
+      - name: Run tests (optional but recommended)
+        run: go test ./...
 
       - name: Build Docker image
         run: |
@@ -43,28 +43,18 @@ jobs:
         run: |
           docker push ${{ secrets.ECR_REGISTRY }}/open-typing-api:latest
 
-      # - name: Update ECS Task Definition with new Docker image and environment variables
-      #   run: |
-      #     ecs_task_definition=$(aws ecs describe-task-definition --task-definition open-typing-api-task-definition)
-      #     new_task_definition=$(echo $ecs_task_definition | jq '.taskDefinition.containerDefinitions[0].image = "${{ secrets.ECR_REGISTRY }}/open-typing-api:latest" | .taskDefinition.containerDefinitions[0].environment += [
-      #         {"name": "DB_USER", "value": "${{ secrets.DB_USER }}"},
-      #         {"name": "DB_PASSWORD", "value": "${{ secrets.DB_PASSWORD }}"},
-      #         {"name": "DB_NAME", "value": "${{ secrets.DB_NAME }}"},
-      #         {"name": "DB_HOST", "value": "${{ secrets.DB_HOST }}"},
-      #         {"name": "DB_PORT", "value": "${{ secrets.DB_PORT }}"},
-      #         {"name": "AWS_ACCESS_KEY_ID", "value": "${{ secrets.AWS_ACCESS_KEY_ID }}"},
-      #         {"name": "AWS_SECRET_ACCESS_KEY", "value": "${{ secrets.AWS_SECRET_ACCESS_KEY }}"},
-      #         {"name": "AWS_REGION", "value": "${{ secrets.AWS_REGION }}"}
-      #     ] | { family: .taskDefinition.family, containerDefinitions: .containerDefinitions }')
-      #
-      #     echo "$new_task_definition" | aws ecs register-task-definition --cli-input-json file:///dev/stdin
+      - name: Register new task definition revision
+        run: |
+          task_definition=$(aws ecs describe-task-definition --task-definition open-typing-api-task-definition)
+          new_task_definition=$(echo "$task_definition" | jq '.taskDefinition | {family, containerDefinitions, executionRoleArn, taskRoleArn, requiresCompatibilities, networkMode, cpu, memory}')
+          aws ecs register-task-definition --cli-input-json "$new_task_definition"
 
       - name: Update ECS Service to Use New Task Definition
         run: |
           latest_revision=$(aws ecs describe-task-definition --task-definition open-typing-api-task-definition --query "taskDefinition.revision" --output text)
-
           aws ecs update-service \
             --cluster my-cluster \
+            --load-balancers targetGroupArn="${{ secrets.LOAD_BALANCER_ARN }}",containerName=open-typing-api,containerPort=8080 \
             --service open-typing-api-service \
             --task-definition open-typing-api-task-definition:$latest_revision \
             --force-new-deployment
