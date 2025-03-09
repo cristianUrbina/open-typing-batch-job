@@ -47,6 +47,7 @@ func main() {
 	r.HandleFunc("/languages", langHandler.GetLanguages).Methods("GET")
 	r.HandleFunc("/languages/{lang}", langHandler.GetLanguageByName).Methods("GET")
 	r.HandleFunc("/snippets/{lang}", snippetHandler.GetSnippetByLanguage).Methods("GET")
+	r.HandleFunc("/version", httphandlers.GetVersion).Methods("GET")
 
 	log.Println("Server is running on port 8080...")
 	handlerWithCors := corsHandler.Handler(r)
