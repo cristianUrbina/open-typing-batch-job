@@ -24,7 +24,7 @@ func NewLangSitterConfig(lang string) (SitterLangConfig, error) {
 		return &SitterPythonConfig{}, nil
 	case "java":
 		return &SitterJavaConfig{}, nil
-	case "javascript":
+	case "js":
 		return &SitterJavascriptConfig{}, nil
 	case "c":
 		return &SitterCConfig{}, nil

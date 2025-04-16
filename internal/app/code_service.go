@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"log"
 
 	"cristianUrbina/open-typing-batch-job/internal/domain"
 )
@@ -17,6 +18,7 @@ type CodeService struct {
 }
 
 func (c *CodeService) Analyze(code *domain.Code) ([]domain.CodeSnippet, error) {
+	log.Printf("Analizing snippet %v", code.RepoDir)
 	snippets, err := c.snippetExtractor.ExtractSnippets(code)
 	if err != nil {
 		return nil, fmt.Errorf("error extracting snippets: %w", err)

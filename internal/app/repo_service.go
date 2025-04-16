@@ -32,7 +32,7 @@ func (r *RepoService) GetRepoContent(repository domain.Repository) (*domain.Repo
 }
 
 func (c *RepoService) Extract(r *domain.RepositoryWithContent) ([]string, error) {
-	tmpDir, err := os.MkdirTemp("", "test-extract")
+	tmpDir, err := os.MkdirTemp("", "test-extract") // TODO: Check memory leak caused by this line
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temporary dir: %v", err)
 	}

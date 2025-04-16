@@ -1,0 +1,49 @@
+services:
+  dynamodb-local:
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+    image: "amazon/dynamodb-local:latest"
+    container_name: dynamodb-local
+    ports:
+      - "8000:8000"
+    volumes:
+      - "./docker/dynamodb:/home/dynamodblocal/data"
+    working_dir: /home/dynamodblocal
+
+  batchjob:
+    container_name: open-typing-batchjob
+    build:
+      context: .
+      dockerfile: batchjob.dockerfile
+    env_file:
+      - ./.env
+    networks:
+      - open_typing_network
+    depends_on:
+      - db
+      - dynamodb-local
+
+  db:
+    container_name: open-typing-postgre-db
+    image: postgres
+    restart: always
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
+    # or set shared memory limit when deploy via swarm stack
+    #volumes:
+    #  - type: tmpfs
+    #    target: /dev/shm
+    #    tmpfs:
+    #      size: 134217728 # 128*2^20 bytes = 128Mb
+    environment:
+      POSTGRES_PASSWORD: cris2001
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - /tmp/postgresql/data:/var/lib/postgresql/data/pgdata
+    ports:
+      - 5432:5432
+    networks:
+        - open_typing_network
+
+networks:
+  open_typing_network:
+    driver: bridge

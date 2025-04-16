@@ -52,7 +52,7 @@ func main() {
 	log.Println("Server is running on port 8080...")
 	handlerWithCors := corsHandler.Handler(r)
 
-	if err := http.ListenAndServe("0.0.0.0:8080", handlerWithCors); err != nil {
+	if err := http.ListenAndServe(":8080", handlerWithCors); err != nil {
 		log.Fatal(err)
 	}
 }

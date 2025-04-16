@@ -2,6 +2,7 @@ package dynamodb
 
 import (
 	"cristianUrbina/open-typing-batch-job/internal/domain"
+	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/dynamodb"

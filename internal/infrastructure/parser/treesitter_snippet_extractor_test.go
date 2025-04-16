@@ -127,7 +127,7 @@ const isEven = (num) => {
 			Name:   "somename",
 			Lang: &domain.Language{
 				Name:  "JavaScript",
-				Alias: "javascript",
+				Alias: "js",
 			},
 		},
 		Content: []byte(codeStr),

@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"os"
-	"runtime"
+	// "runtime"
 	"sync"
 
 	"cristianUrbina/open-typing-batch-job/internal/app"
@@ -15,14 +15,14 @@ import (
 
 	infrastructure "cristianUrbina/open-typing-batch-job/internal/infrastructure/parser"
 
-	"github.com/joho/godotenv"
+	// "github.com/joho/godotenv"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file, %v", err)
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	log.Fatalf("Error loading .env file, %v", err)
+	// }
 
 	log.Println("Searching for GitHub repos...")
 
@@ -55,7 +55,8 @@ func main() {
 		close(repoChan)
 	}()
 
-	numWorkers := runtime.NumCPU()
+	// numWorkers := runtime.NumCPU()
+	numWorkers := 1
 	var resultsWg sync.WaitGroup
 	for range numWorkers {
 		resultsWg.Add(1)
