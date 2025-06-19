@@ -61,12 +61,13 @@ func (a *APIClient) SearchGitHubRepos(lang string) (*GitHubSearchReposResp, erro
 	}
 
 	defer resp.Body.Close()
+	fmt.Printf("Req: %v", req)
 	fmt.Println("Response Status:", resp.Status)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
-	result, err := bodyToClass[*GitHubSearchReposResp](body)
+	result, _ := bodyToClass[*GitHubSearchReposResp](body)
 	return result, nil
 }
 

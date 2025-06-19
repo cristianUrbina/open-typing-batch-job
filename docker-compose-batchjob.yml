@@ -8,24 +8,11 @@ services:
     volumes:
       - "./docker/dynamodb:/home/dynamodblocal/data"
     working_dir: /home/dynamodblocal
-
-  batchjob:
-    container_name: open-typing-batchjob
-    build:
-      context: .
-      dockerfile: batchjob.dockerfile
-    env_file:
-      - ./.env
     networks:
       - open_typing_network
-    depends_on:
-      - db
-      - dynamodb-local
-
   db:
     container_name: open-typing-postgre-db
     image: postgres
-    restart: always
     # set shared memory limit when using docker-compose
     shm_size: 128mb
     # or set shared memory limit when deploy via swarm stack
@@ -42,7 +29,22 @@ services:
     ports:
       - 5432:5432
     networks:
-        - open_typing_network
+      - open_typing_network
+
+  batchjob:
+    container_name: open-typing-batchjob
+    build:
+      context: .
+      dockerfile: batchjob.dockerfile
+    env_file:
+      - ./.env
+    networks:
+      - open_typing_network
+    depends_on:
+      - db
+      - dynamodb-local
+    environment:
+      REGION: "eu-west-1"
 
 networks:
   open_typing_network:

@@ -2,7 +2,6 @@ package app
 
 import (
 	"errors"
-	"log"
 	"math/rand"
 
 	"cristianUrbina/open-typing-batch-job/internal/domain"
@@ -17,7 +16,6 @@ func NewSnippetService(repo domain.CodeSnippetRepository) *SnippetService {
 }
 
 func (s *SnippetService) AddSnippet(repoName, fileName, language, snippetContent string) error {
-	log.Printf("Storing code snippet")
 	snippet := domain.CodeSnippet{
 		Name:       fileName,
 		Repository: repoName,

@@ -38,7 +38,7 @@ func main() {
 	langSvc := &app.LanguageService{Repo: languageRepo}
 	langHandler := &httphandlers.LanguageHandler{Service: langSvc}
 
-	dynamoClient := dynamodb.NewDynamoClient()
+	dynamoClient := dynamodb.NewLocalDynamoDBClient()
 	snippetRepo := dynamodb.NewCodeSnippetRepository(dynamoClient)
 	snippetSvc := app.NewSnippetService(snippetRepo)
 	snippetHandler := &httphandlers.SnippetHandler{Service: snippetSvc}

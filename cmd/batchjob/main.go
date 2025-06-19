@@ -3,9 +3,10 @@ package main
 import (
 	"log"
 	"os"
-	// "runtime"
+	"runtime"
 	"sync"
 
+	// "runtime"
 	"cristianUrbina/open-typing-batch-job/internal/app"
 	"cristianUrbina/open-typing-batch-job/internal/domain"
 	"cristianUrbina/open-typing-batch-job/internal/infrastructure/clients/githubapiclient"
@@ -14,7 +15,6 @@ import (
 	"cristianUrbina/open-typing-batch-job/internal/infrastructure/database/postgredatabase"
 
 	infrastructure "cristianUrbina/open-typing-batch-job/internal/infrastructure/parser"
-
 	// "github.com/joho/godotenv"
 )
 
@@ -38,12 +38,13 @@ func main() {
 		log.Fatalf("Error getting languages: %v", err)
 	}
 
-	dynamoClient := dynamodb.NewDynamoClient()
+	// dynamoClient := dynamodb.NewDynamoClient()
+	dynamoClient := dynamodb.NewLocalDynamoDBClient()
 	snippetRepo := dynamodb.NewCodeSnippetRepository(dynamoClient)
 	snippetSvc := app.NewSnippetService(snippetRepo)
 
 	var wg sync.WaitGroup
-	repoChan := make(chan domain.Repository, 50)
+	repoChan := make(chan domain.Repository, 500)
 
 	for _, lang := range langs {
 		wg.Add(1)
@@ -55,10 +56,10 @@ func main() {
 		close(repoChan)
 	}()
 
-	// numWorkers := runtime.NumCPU()
-	numWorkers := 1
+	numWorkers := runtime.NumCPU() * 5
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	var resultsWg sync.WaitGroup
-	for range numWorkers {
+	for i := 0; i < numWorkers; i++ {
 		resultsWg.Add(1)
 		go processRepoResults(repoChan, &resultsWg, snippetSvc)
 	}
@@ -151,6 +152,6 @@ func processRepoResults(repoChan <-chan domain.Repository, resultsWg *sync.WaitG
 				}
 			}
 		}
-		log.Printf("no of snippets extracted from %v, %v", repo.Name, snippetsCnt)
+		log.Printf("Saved %v snippets extracted from %v", snippetsCnt, repo.Name)
 	}
 }
